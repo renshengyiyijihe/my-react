@@ -3,7 +3,7 @@ import {
 	getBaseRollupPlugins,
 	getPackageJSON,
 	resolvePkgPath
-} from './utils.js';
+} from './utils.ts';
 
 const { name, module } = getPackageJSON('react');
 const pkgPath = resolvePkgPath(name);
