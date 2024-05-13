@@ -1,0 +1,14 @@
+{
+  "name": "react-reconciler",
+  "version": "1.0.0",
+  "description": "react-reconciler",
+  "module": "index.ts",
+  "dependencies": {
+		"shared": "workspace: *"
+	},
+  "scripts": {
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
