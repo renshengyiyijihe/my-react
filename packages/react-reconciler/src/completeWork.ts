@@ -1,4 +1,4 @@
-import { appendInitialChild, Container } from 'hostConfig';
+import { appendInitialChild, Container, createInstance, createTextInstance, Instance } from 'hostConfig';
 import { FiberNode } from './fiber';
 import { HostComponent, HostRoot, HostText } from './workTags';
 import { NoFlags } from './fiberFlags';
@@ -20,6 +20,7 @@ export const completeWork = (workInProgress: FiberNode) => {
 				appendAllChildren(instance, workInProgress);
 				workInProgress.stateNode = instance;
 			}
+			bubbleProperties(workInProgress);
 			return null;
 		case HostText:
 			if (current !== null && workInProgress.stateNode !== null) {
@@ -28,6 +29,8 @@ export const completeWork = (workInProgress: FiberNode) => {
 				const instance = createTextInstance(newProps.content);
 				workInProgress.stateNode = instance;
 			}
+			bubbleProperties(workInProgress);
+			return null;
 		default:
 			if (__DEV__) {
 				console.warn('completeWork未实现的 tag 类型 ->> ', workInProgress);
@@ -37,7 +40,7 @@ export const completeWork = (workInProgress: FiberNode) => {
 };
 
 export const appendAllChildren = (
-	parent: FiberNode,
+	parent: Instance | Container,
 	workInProgress: FiberNode
 ) => {
 	let node = workInProgress.child;
@@ -76,5 +79,5 @@ export const bubbleProperties = (workInProgress: FiberNode) => {
 		child.return = workInProgress;
 		child = child.sibling;
 	}
-	workInProgress.subtreeFlags |= subtreeFlags;
+	workInProgress.subtreeFlags = subtreeFlags;
 };

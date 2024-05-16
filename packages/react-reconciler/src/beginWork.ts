@@ -1,7 +1,9 @@
 import { ReactElementType } from 'shared/ReactTypes';
 import { FiberNode } from './fiber';
-import { UpdateQueue } from './updateQueue';
-import { HostComponent, HostRoot, HostText } from './workTags';
+import { processUpdateQueue, UpdateQueue } from './updateQueue';
+import { FunctionComponent, HostComponent, HostRoot, HostText } from './workTags';
+import { mountChildFibers, reconcileChildFibers } from './childFiber';
+import { renderWithHooks } from './fiberHooks';
 
 export const beginWork = (workInProgress: FiberNode) => {
 	const tag = workInProgress.tag;
@@ -10,7 +12,9 @@ export const beginWork = (workInProgress: FiberNode) => {
 		case HostRoot:
 			return updateHostRoot(workInProgress);
 		case HostComponent:
-			return updateHostComponents(workInProgress);
+			return updateHostComponent(workInProgress);
+		case FunctionComponent:
+			return updateFunctionComponent(workInProgress);
 		case HostText:
 			return updateHostText(workInProgress);
 		default:
@@ -45,7 +49,15 @@ export const updateHostComponent = (workInProgress: FiberNode) => {
 	return workInProgress.child;
 };
 
-export const updateHostText = () => {
+export const updateFunctionComponent = (workInProgress: FiberNode) => {
+	const nextChildren = renderWithHooks(workInProgress)
+	reconcileChildren(workInProgress, nextChildren);
+
+	return workInProgress.child;
+};
+
+
+export const updateHostText = (workInProgress: FiberNode) => {
 	return null;
 };
 

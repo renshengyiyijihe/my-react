@@ -16,10 +16,10 @@ export default defineConfig({
 				find: 'react',
 				replacement: resolvePkgPath('react', true)
 			},
-			// {
-			// 	find: 'react-dom',
-			// 	replacement: resolvePkgPath('react-dom')
-			// },
+			{
+				find: 'react-dom',
+				replacement: resolvePkgPath('react-dom', true)
+			},
 			// {
 			// 	find: 'hostConfig',
 			// 	replacement: resolve(resolvePkgPath('react-dom'), './src/hostConfig.ts')

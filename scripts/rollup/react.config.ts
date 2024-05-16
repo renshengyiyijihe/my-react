@@ -4,11 +4,11 @@ import {
 	getPackageJSON,
 	resolvePkgPath
 } from './utils.ts';
+// import { customResolveExtensions } from './customResolveExtensions.ts';
 
 const { name, module } = getPackageJSON('react');
 const pkgPath = resolvePkgPath(name);
 const pkgDistPath = resolvePkgPath(name, true);
-console.log('pkgPath, pkgDistPath', pkgPath, '\n', pkgDistPath, module);
 
 export default [
 	{
@@ -29,7 +29,8 @@ export default [
 					version,
 					main: 'index.js'
 				})
-			})
+			}),
+			// customResolveExtensions()
 		]
 	},
 	{
