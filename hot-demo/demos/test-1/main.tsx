@@ -13,7 +13,7 @@ const App = () => {
 	return (
 		<div>
 			{/* <span>title</span> */}
-			{/* <span>{count}</span> */}
+			<span key={count}>{count}</span>
 		</div>
 	);
 };
