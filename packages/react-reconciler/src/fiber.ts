@@ -18,6 +18,7 @@ export class FiberNode {
 	memoizedState: any;
 	alternate: FiberNode | null;
 	flags: Flags;
+	deletions: Array<FiberNode> | null;
 	subtreeFlags: Flags;
 	updateQueue: unknown;
 
@@ -41,6 +42,7 @@ export class FiberNode {
 		this.flags = NoFlags;
 		this.subtreeFlags = NoFlags;
 		this.updateQueue = null;
+		this.deletions = null; // 指向待删除的子节点，用于在协调过程中进行删除
 	}
 }
 

@@ -50,6 +50,8 @@ export const updateHostComponent = (workInProgress: FiberNode) => {
 };
 
 export const updateFunctionComponent = (workInProgress: FiberNode) => {
+	console.log('updateFunctionComponent', workInProgress);
+	
 	const nextChildren = renderWithHooks(workInProgress)
 	reconcileChildren(workInProgress, nextChildren);
 

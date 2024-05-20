@@ -1,7 +1,18 @@
-import { appendInitialChild, Container, createInstance, createTextInstance, Instance } from 'hostConfig';
+import {
+	appendInitialChild,
+	Container,
+	createInstance,
+	createTextInstance,
+	Instance
+} from 'hostConfig';
 import { FiberNode } from './fiber';
-import { HostComponent, HostRoot, HostText } from './workTags';
-import { NoFlags } from './fiberFlags';
+import {
+	FunctionComponent,
+	HostComponent,
+	HostRoot,
+	HostText
+} from './workTags';
+import { NoFlags, Update } from './fiberFlags';
 
 export const completeWork = (workInProgress: FiberNode) => {
 	const newProps = workInProgress.pendingProps;
@@ -13,7 +24,8 @@ export const completeWork = (workInProgress: FiberNode) => {
 			return null;
 		case HostComponent:
 			if (current !== null && workInProgress.stateNode !== null) {
-				// TODO更新阶段
+				// update
+				updateHostComponent(current, workInProgress);
 			} else {
 				// mount 首屏挂载
 				const instance = createInstance(workInProgress.type, newProps);
@@ -22,9 +34,13 @@ export const completeWork = (workInProgress: FiberNode) => {
 			}
 			bubbleProperties(workInProgress);
 			return null;
+		case FunctionComponent:
+			bubbleProperties(workInProgress);
+			return null;
 		case HostText:
 			if (current !== null && workInProgress.stateNode !== null) {
-				// TODO更新阶段
+				// update
+				updateHostText(current, workInProgress);
 			} else {
 				const instance = createTextInstance(newProps.content);
 				workInProgress.stateNode = instance;
@@ -80,4 +96,20 @@ export const bubbleProperties = (workInProgress: FiberNode) => {
 		child = child.sibling;
 	}
 	workInProgress.subtreeFlags = subtreeFlags;
+};
+
+const updateHostText = (current: FiberNode, workInProgress: FiberNode) => {
+	const oldText = current.memoizedProps.content;
+	const newText = workInProgress.pendingProps.content;
+	if (oldText !== newText) {
+		markUpdate(workInProgress);
+	}
+};
+
+const updateHostComponent = (current: FiberNode, workInProgress: FiberNode) => {
+	markUpdate(workInProgress);
+};
+
+const markUpdate = (workInProgress: FiberNode) => {
+	workInProgress.flags |= Update;
 };

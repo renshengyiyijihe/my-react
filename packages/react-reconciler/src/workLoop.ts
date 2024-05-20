@@ -87,8 +87,6 @@ const completeUnitOfWork = (fiber: FiberNode) => {
 
 export const scheduleUpdateOnFiber = (fiber: FiberNode) => {
 	const root = markUpdateFromFiberToRoot(fiber);
-	debugger
-	console.log('root',fiber, root);
 	renderRoot(root);
 };
 
