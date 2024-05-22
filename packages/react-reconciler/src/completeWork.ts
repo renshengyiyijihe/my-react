@@ -7,6 +7,7 @@ import {
 } from 'hostConfig';
 import { FiberNode } from './fiber';
 import {
+	Fragment,
 	FunctionComponent,
 	HostComponent,
 	HostRoot,
@@ -47,6 +48,11 @@ export const completeWork = (workInProgress: FiberNode) => {
 			}
 			bubbleProperties(workInProgress);
 			return null;
+
+		case Fragment:
+			bubbleProperties(workInProgress);
+			return null;
+
 		default:
 			if (__DEV__) {
 				console.warn('completeWork未实现的 tag 类型 ->> ', workInProgress);

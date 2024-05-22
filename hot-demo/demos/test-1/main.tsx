@@ -1,19 +1,42 @@
-import React, { useState } from 'react';
+import { Fragment, useState } from 'react';
 import ReactDOM from 'react-dom/client';
 
 const App = () => {
 	const [count, setCount] = useState(0);
 
-	setInterval(() => {
-		setCount((v) => v + 1);
-	}, 3000);
+	// setInterval(() => {
+	// 	setCount((v) => v + 1);
+	// }, 3000);
 
 	console.log('count, setCount', count, setCount);
 
 	return (
 		<div>
-			{/* <span>title</span> */}
-			<span key={count}>{count}</span>
+			<div
+				onClick={() => {
+					setCount((count) => count + 1);
+					setCount((count) => count + 1);
+					setCount((count) => count + 1);
+				}}
+			>
+				{count}
+			</div>
+			{/* {count.map((v, index) => {
+				return (
+					<p
+						key={v}
+						onClick={() => {
+							setCount((count) => count + 1);
+				setCount((count) => count + 1);
+				setCount((count) => count + 1);
+							console.log('index', index);
+							// count[0] == 0 ? setCount([1, 0]) : setCount([0, 1]);
+						}}
+					>
+						{v}
+					</p>
+				);
+			})} */}
 		</div>
 	);
 };

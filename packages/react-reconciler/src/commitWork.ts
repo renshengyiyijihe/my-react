@@ -2,6 +2,8 @@ import {
 	appendChildToContainer,
 	commitUpdate,
 	Container,
+	insertChildToContainer,
+	Instance,
 	removeChild
 } from 'hostConfig';
 import { FiberNode, FiberRootNode } from './fiber';
@@ -76,11 +78,11 @@ export const commitPlacement = (finishedWork: FiberNode) => {
 		console.log('执行 Placement 操作', finishedWork);
 	}
 
-	const hostParent = getHostParent(finishedWork);
+	const hostParent = getHostParent(finishedWork) as Container;
 
-	if (hostParent !== null) {
-		appendPlacementNodeIntoContainer(finishedWork, hostParent);
-	}
+	const sibling = getHostSibling(finishedWork);
+
+	appendPlacementNodeIntoContainer(finishedWork, hostParent, sibling);
 };
 
 const commitDeletion = (childToDelete: FiberNode) => {
@@ -88,24 +90,28 @@ const commitDeletion = (childToDelete: FiberNode) => {
 		console.log('执行 Deletion 操作 ->> ', childToDelete);
 	}
 
-	let rootHostNode: FiberNode | null = null;
+	// let rootHostNode: FiberNode | null = null;
+	let rootChildrenToDelete: FiberNode[] = [];
+
 	commitNestedUnmounts(childToDelete, (unmountFiber) => {
 		switch (unmountFiber.tag) {
 			case HostComponent:
-				if (rootHostNode === null) {
-					rootHostNode = unmountFiber;
-				}
+				recordChildrenToDelete(rootChildrenToDelete, unmountFiber);
+				// if (rootChildrenToDelete === null) {
+				// 	rootChildrenToDelete = unmountFiber;
+				// }
 				// TODO unmount ref
 				return;
 			case HostText:
-				if (rootHostNode === null) {
-					rootHostNode = unmountFiber;
-				}
+				recordChildrenToDelete(rootChildrenToDelete, unmountFiber);
+				// if (rootHostNode === null) {
+				// 	rootHostNode = unmountFiber;
+				// }
 				return;
 			case FunctionComponent:
-				if (rootHostNode === null) {
-					rootHostNode = unmountFiber;
-				}
+				// if (rootChildrenToDelete === null) {
+				// 	rootChildrenToDelete = unmountFiber;
+				// }
 				// TODO unmount ref
 				return;
 			default:
@@ -115,14 +121,34 @@ const commitDeletion = (childToDelete: FiberNode) => {
 		}
 	});
 
-	if (rootHostNode !== null) {
-		const hostParent = getHostParent(rootHostNode) as Container;
-		removeChild((rootHostNode as FiberNode).stateNode, hostParent);
+	if (rootChildrenToDelete !== null) {
+		const hostParent = getHostParent(childToDelete) as Container;
+		rootChildrenToDelete.forEach((node) => {
+			removeChild(node.stateNode, hostParent);
+		});
 	}
 
 	childToDelete.return = null;
 	childToDelete.child = null;
 };
+
+function recordChildrenToDelete(
+	childrenToDelete: FiberNode[],
+	unmountFiber: FiberNode
+) {
+	let lastOne = childrenToDelete[childrenToDelete.length - 1];
+	if (!lastOne) {
+		childrenToDelete.push(unmountFiber);
+	} else {
+		let node = lastOne.sibling;
+		while (node !== null) {
+			if (lastOne == unmountFiber) {
+				childrenToDelete.push(unmountFiber);
+			}
+			node = node.sibling;
+		}
+	}
+}
 
 const commitNestedUnmounts = (
 	root: FiberNode,
@@ -177,10 +203,16 @@ const getHostParent = (fiber: FiberNode): Container | null => {
 
 export const appendPlacementNodeIntoContainer = (
 	finishedWork: FiberNode,
-	hostParent: Container
+	hostParent: Container,
+	before?: Instance
 ) => {
 	if (finishedWork.tag === HostComponent || finishedWork.tag === HostText) {
-		appendChildToContainer(finishedWork.stateNode, hostParent);
+		// 移动
+		if (before) {
+			insertChildToContainer(finishedWork.stateNode, hostParent, before);
+		} else {
+			appendChildToContainer(finishedWork.stateNode, hostParent);
+		}
 	} else {
 		const child = finishedWork.child;
 		if (child !== null) {
@@ -192,6 +224,20 @@ export const appendPlacementNodeIntoContainer = (
 			}
 		}
 	}
+
+	// if (finishedWork.tag === HostComponent || finishedWork.tag === HostText) {
+	// 	appendChildToContainer(finishedWork.stateNode, hostParent);
+	// } else {
+	// 	const child = finishedWork.child;
+	// 	if (child !== null) {
+	// 		appendPlacementNodeIntoContainer(child, hostParent);
+	// 		let sibling = child.sibling;
+	// 		while (sibling !== null) {
+	// 			appendPlacementNodeIntoContainer(sibling, hostParent);
+	// 			sibling = sibling.sibling;
+	// 		}
+	// 	}
+	// }
 };
 
 export const getHostSibling = (fiber: FiberNode) => {

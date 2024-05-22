@@ -1,16 +1,37 @@
-import { Props, ReactElementType } from 'shared/ReactTypes';
+import { Key, Props, ReactElementType } from 'shared/ReactTypes';
 import {
 	createFiberFromElement,
+	createFiberFromFragment,
 	createWorkInProgress,
 	FiberNode
 } from './fiber';
-import { HostText } from './workTags';
+import { Fragment, HostText } from './workTags';
 import { ChildDeletion, Placement } from './fiberFlags';
-import { REACT_ELEMENT_TYPE } from 'shared/ReactSymbols';
+import { REACT_ELEMENT_TYPE, REACT_FRAGMENT_TYPE } from 'shared/ReactSymbols';
 
 type ExistingChildren = Map<string | number, FiberNode>;
 
 export const ChildReconciler = (shouldTrackSideEffects: boolean) => {
+	function updateFragment(
+		returnFiber: FiberNode,
+		current: FiberNode | undefined,
+		elements: any[],
+		key: Key,
+		existingChildren: ExistingChildren
+	) {
+		let fiber;
+		if (!current || current.tag !== Fragment) {
+			fiber = createFiberFromFragment(elements, key);
+		} else {
+			existingChildren.delete(key);
+			fiber = useFiber(current, elements);
+		}
+
+		fiber.return = returnFiber;
+
+		return fiber;
+	}
+
 	function updateFromMap(
 		returnFiber: FiberNode,
 		existingChildren: ExistingChildren,
@@ -30,10 +51,20 @@ export const ChildReconciler = (shouldTrackSideEffects: boolean) => {
 			return new FiberNode(HostText, { content: element + '' }, null);
 		}
 
-		//HostComponent
+		// ReactElement
 		if (typeof element === 'object' && element !== null) {
 			switch (element.$$typeof) {
 				case REACT_ELEMENT_TYPE:
+					if (element.type === REACT_FRAGMENT_TYPE) {
+						return updateFragment(
+							returnFiber,
+							before,
+							element,
+							key,
+							existingChildren
+						);
+					}
+
 					if (before && before.type === element.type) {
 						existingChildren.delete(key);
 						return useFiber(before, element.props);
@@ -152,7 +183,12 @@ export const ChildReconciler = (shouldTrackSideEffects: boolean) => {
 			if (currentFiber.key === element.key) {
 				if (element.$$typeof === REACT_ELEMENT_TYPE) {
 					if (currentFiber.type === element.type) {
-						const existing = useFiber(currentFiber, element.props);
+						let props = element.props;
+						if (element.type === REACT_FRAGMENT_TYPE) {
+							props = element.props.children;
+						}
+
+						const existing = useFiber(currentFiber, props);
 						existing.return = returnFiber;
 
 						deleteRemainingChildren(returnFiber, currentFiber.sibling);
@@ -172,26 +208,12 @@ export const ChildReconciler = (shouldTrackSideEffects: boolean) => {
 			}
 		}
 
-		// if (currentFiber !== null) {
-		// 	if (currentFiber.key === element.key) {
-		// 		if (element.$$typeof === REACT_ELEMENT_TYPE) {
-		// 			if (currentFiber.type === element.type) {
-		// 				const existing = useFiber(currentFiber, element.props);
-		// 				existing.return = returnFiber;
-		// 				return existing;
-		// 			}
-		// 			deleteChild(returnFiber, currentFiber);
-		// 		} else {
-		// 			if (__DEV__) {
-		// 				console.warn('还未实现的 React 类型', element);
-		// 			}
-		// 		}
-		// 	} else {
-		// 		deleteChild(returnFiber, currentFiber);
-		// 	}
-		// }
-
-		const fiber = createFiberFromElement(element);
+		let fiber;
+		if (element.type === REACT_FRAGMENT_TYPE) {
+			fiber = createFiberFromFragment(element.props.children, element.key);
+		} else {
+			fiber = createFiberFromElement(element);
+		}
 		fiber.return = returnFiber;
 		return fiber;
 	};
@@ -230,7 +252,22 @@ export const ChildReconciler = (shouldTrackSideEffects: boolean) => {
 		currentFiber: FiberNode | null,
 		newChild?: ReactElementType
 	) {
+		// Fragment
+		const isUnkeyedTopLevelFragment =
+			typeof newChild === 'object' &&
+			newChild !== null &&
+			newChild.type === REACT_FRAGMENT_TYPE &&
+			newChild.key === null;
+
+		if (isUnkeyedTopLevelFragment) {
+			newChild = newChild?.props.children;
+		}
+
 		if (newChild !== null && typeof newChild == 'object') {
+			if (Array.isArray(newChild)) {
+				return reconcileChildrenArray(returnFiber, currentFiber, newChild);
+			}
+
 			switch (newChild.$$typeof) {
 				case REACT_ELEMENT_TYPE:
 					return placeSingleChild(

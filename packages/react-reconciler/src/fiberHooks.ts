@@ -10,6 +10,7 @@ import {
 import { Action } from 'shared/ReactTypes';
 import { scheduleUpdateOnFiber } from './workLoop';
 import internals from 'shared/internals';
+import { requestUpdateLane } from './fiberLanes';
 
 const { currentDispatcher } = internals;
 
@@ -118,10 +119,11 @@ function dispatchSetState<State>(
 	updateQueue: UpdateQueue<State>,
 	action: Action<State>
 ) {
-	const update = createUpdate(action);
+	const lane = requestUpdateLane();
+	const update = createUpdate(action, lane);
 	enqueueUpdate(updateQueue, update);
 
-	scheduleUpdateOnFiber(fiber);
+	scheduleUpdateOnFiber(fiber, lane);
 }
 
 function updateState<State>(): [State, Dispatch<State>] {
@@ -133,9 +135,14 @@ function updateState<State>(): [State, Dispatch<State>] {
 
 	const queue = hook.queue as UpdateQueue<State>;
 	const pending = queue.shared.pending;
+	const lane = requestUpdateLane();
 
 	if (pending !== null) {
-		const { memoizedState } = processUpdateQueue(hook.memoizedState, pending);
+		const { memoizedState } = processUpdateQueue(
+			hook.memoizedState,
+			pending,
+			lane
+		);
 		hook.memoizedState = memoizedState;
 	}
 
@@ -155,6 +162,12 @@ function updateWorkInProgressHook(): Hook {
 		}
 	} else {
 		nextCurrentHook = (currentHook as Hook).next;
+	}
+
+	if (nextCurrentHook == null) {
+		throw new Error(
+			`组件 ${currentlyRenderingFiber?.type} 本次执行时的 Hooks 比上次执行多`
+		);
 	}
 
 	currentHook = nextCurrentHook as Hook;
